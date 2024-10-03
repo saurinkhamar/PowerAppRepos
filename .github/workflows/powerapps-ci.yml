@@ -1,0 +1,38 @@
+name: PowerApps CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Power Platform CLI
+      run: |
+        npm install -g pac
+
+    - name: Authenticate Power Platform
+      run: |
+        pac auth create --url ${{ secrets.POWER_PLATFORM_URL }} --clientid ${{ secrets.CLIENT_ID }} --clientsecret ${{ secrets.CLIENT_SECRET }} --tenantid ${{ secrets.TENANT_ID }}
+      
+    - name: Export Solution
+      run: |
+        pac solution export --name YourSolutionName --path ./solution.zip --managed
+      env:
+        POWER_PLATFORM_URL: ${{ secrets.POWER_PLATFORM_URL }}
+        CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+        TENANT_ID: ${{ secrets.TENANT_ID }}
+
+    - name: Upload Exported Solution to GitHub
+      uses: actions/upload-artifact@v2
+      with:
+        name: solution-export
+        path: ./solution.zip
